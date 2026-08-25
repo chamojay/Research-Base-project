@@ -276,6 +276,29 @@ abstract class AbstractClinicServiceTests {
 
     @Test
     @Transactional
+    void shouldPersistVisitCancellationDuringNormalUpdates() {
+		Visit visit = this.clinicService.findVisitById(1);
+		visit.setCancelled(true);
+		visit.setCancellationReason("Owner unavailable");
+		this.clinicService.saveVisit(visit);
+		clearCache();
+
+		visit = this.clinicService.findVisitById(1);
+		assertThat(visit.isCancelled()).isTrue();
+		assertThat(visit.getCancellationReason()).isEqualTo("Owner unavailable");
+
+		visit.setDescription("Updated description");
+		this.clinicService.saveVisit(visit);
+		clearCache();
+
+		visit = this.clinicService.findVisitById(1);
+		assertThat(visit.getDescription()).isEqualTo("Updated description");
+		assertThat(visit.isCancelled()).isTrue();
+		assertThat(visit.getCancellationReason()).isEqualTo("Owner unavailable");
+    }
+
+    @Test
+    @Transactional
     void shouldDeleteVisit(){
     	Visit visit = this.clinicService.findVisitById(1);
         this.clinicService.deleteVisit(visit);

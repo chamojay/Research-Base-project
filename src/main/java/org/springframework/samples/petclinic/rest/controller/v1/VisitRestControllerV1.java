@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.samples.petclinic.mapper.VisitMapper;
 import org.springframework.samples.petclinic.model.Visit;
 import org.springframework.samples.petclinic.rest.api.VisitsApi;
+import org.springframework.samples.petclinic.rest.dto.VisitCancellationRequestDto;
 import org.springframework.samples.petclinic.rest.dto.VisitDto;
 import org.springframework.samples.petclinic.rest.dto.VisitFieldsDto;
 import org.springframework.samples.petclinic.service.ClinicService;
@@ -106,6 +107,32 @@ public class VisitRestControllerV1 implements VisitsApi {
         }
         this.clinicService.deleteVisit(visit);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @Override
+    public ResponseEntity<VisitDto> cancelVisit(Integer visitId, VisitCancellationRequestDto visitCancellationRequestDto) {
+        if (visitCancellationRequestDto == null ||
+            visitCancellationRequestDto.getReason() == null ||
+            visitCancellationRequestDto.getReason().trim().isEmpty() ||
+            visitCancellationRequestDto.getReason().length() > 255) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        Visit visit = this.clinicService.findVisitById(visitId);
+        if (visit == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        if (visit.isCancelled()) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
+        }
+
+        visit.setCancelled(true);
+        visit.setCancellationReason(visitCancellationRequestDto.getReason());
+        this.clinicService.saveVisit(visit);
+
+        return new ResponseEntity<>(visitMapper.toVisitDto(visit), HttpStatus.OK);
     }
 
 }

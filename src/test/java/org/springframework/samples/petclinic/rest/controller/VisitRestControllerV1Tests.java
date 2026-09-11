@@ -17,6 +17,7 @@
 package org.springframework.samples.petclinic.rest.controller;
 
 import org.springframework.samples.petclinic.rest.controller.v1.VisitRestControllerV1;
+import org.springframework.samples.petclinic.rest.dto.VisitCancelDto;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -240,6 +241,54 @@ class VisitRestControllerV1Tests {
         this.mockMvc.perform(delete("/api/visits/999")
     		.content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
         	.andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitSuccess() throws Exception {
+        Visit visit = visits.get(0);
+        given(this.clinicService.findVisitById(2)).willReturn(visit);
+
+        VisitCancelDto cancelDto = new VisitCancelDto();
+        cancelDto.setReason("Owner unavailable");
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(cancelDto);
+
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+                .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.id").value(2))
+            .andExpect(jsonPath("$.cancelled").value(true))
+            .andExpect(jsonPath("$.cancellationReason").value("Owner unavailable"));
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitNotFound() throws Exception {
+        given(this.clinicService.findVisitById(999)).willReturn(null);
+
+        VisitCancelDto cancelDto = new VisitCancelDto();
+        cancelDto.setReason("Owner unavailable");
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(cancelDto);
+
+        this.mockMvc.perform(put("/api/visits/999/cancel")
+                .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitError() throws Exception {
+        VisitCancelDto cancelDto = new VisitCancelDto();
+        cancelDto.setReason(null);
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(cancelDto);
+
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+                .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isBadRequest());
     }
 
 }

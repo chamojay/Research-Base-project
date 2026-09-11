@@ -35,6 +35,21 @@ class JdbcVisitRowMapper implements RowMapper<Visit> {
         visit.setId(rs.getInt("visit_id"));
         visit.setDate(rs.getObject("visit_date", LocalDate.class));
         visit.setDescription(rs.getString("description"));
+        if (hasColumn(rs, "cancelled")) {
+            visit.setCancelled(rs.getBoolean("cancelled"));
+        }
+        if (hasColumn(rs, "cancellation_reason")) {
+            visit.setCancellationReason(rs.getString("cancellation_reason"));
+        }
         return visit;
+    }
+
+    private boolean hasColumn(ResultSet rs, String columnName) {
+        try {
+            rs.findColumn(columnName);
+            return true;
+        } catch (SQLException e) {
+            return false;
+        }
     }
 }

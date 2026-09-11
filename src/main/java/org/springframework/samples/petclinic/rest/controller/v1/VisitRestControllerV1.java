@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.samples.petclinic.mapper.VisitMapper;
 import org.springframework.samples.petclinic.model.Visit;
 import org.springframework.samples.petclinic.rest.api.VisitsApi;
+import org.springframework.samples.petclinic.rest.dto.VisitCancelDto;
 import org.springframework.samples.petclinic.rest.dto.VisitDto;
 import org.springframework.samples.petclinic.rest.dto.VisitFieldsDto;
 import org.springframework.samples.petclinic.service.ClinicService;
@@ -106,6 +107,19 @@ public class VisitRestControllerV1 implements VisitsApi {
         }
         this.clinicService.deleteVisit(visit);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @Override
+    public ResponseEntity<VisitDto> cancelVisit(Integer visitId, VisitCancelDto visitCancelDto) {
+        Visit currentVisit = this.clinicService.findVisitById(visitId);
+        if (currentVisit == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        currentVisit.setCancelled(true);
+        currentVisit.setCancellationReason(visitCancelDto.getReason());
+        this.clinicService.saveVisit(currentVisit);
+        return new ResponseEntity<>(visitMapper.toVisitDto(currentVisit), HttpStatus.OK);
     }
 
 }

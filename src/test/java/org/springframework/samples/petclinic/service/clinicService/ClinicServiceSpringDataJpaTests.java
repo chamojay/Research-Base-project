@@ -21,6 +21,7 @@ class ClinicServiceSpringDataJpaTests extends AbstractClinicServiceTests {
 
     @Override
     void clearCache() {
+        entityManager.flush();
         entityManager.clear();
     }
 }

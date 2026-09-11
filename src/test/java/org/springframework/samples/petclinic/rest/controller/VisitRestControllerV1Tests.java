@@ -43,6 +43,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -123,7 +125,8 @@ class VisitRestControllerV1Tests {
             .andExpect(status().isOk())
             .andExpect(content().contentType("application/json"))
             .andExpect(jsonPath("$.id").value(2))
-            .andExpect(jsonPath("$.description").value("rabies shot"));
+            .andExpect(jsonPath("$.description").value("rabies shot"))
+            .andExpect(jsonPath("$.cancelled").value(false));
     }
 
     @Test
@@ -145,8 +148,10 @@ class VisitRestControllerV1Tests {
             .andExpect(content().contentType("application/json"))
         	.andExpect(jsonPath("$.[0].id").value(2))
         	.andExpect(jsonPath("$.[0].description").value("rabies shot"))
+	        .andExpect(jsonPath("$.[0].cancelled").value(false))
         	.andExpect(jsonPath("$.[1].id").value(3))
-        	.andExpect(jsonPath("$.[1].description").value("neutered"));
+	        .andExpect(jsonPath("$.[1].description").value("neutered"))
+	        .andExpect(jsonPath("$.[1].cancelled").value(false));
     }
 
     @Test
@@ -228,6 +233,100 @@ class VisitRestControllerV1Tests {
     	this.mockMvc.perform(delete("/api/visits/2")
     		.content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
         	.andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitSuccess() throws Exception {
+        Visit visit = visits.get(0);
+        given(this.clinicService.findVisitById(2)).willReturn(visit);
+
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+                .content("{\"reason\":\"Owner unavailable\"}")
+                .accept(MediaType.APPLICATION_JSON_VALUE)
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.id").value(2))
+            .andExpect(jsonPath("$.description").value("rabies shot"))
+            .andExpect(jsonPath("$.petId").value(8))
+            .andExpect(jsonPath("$.cancelled").value(true))
+            .andExpect(jsonPath("$.cancellationReason").value("Owner unavailable"));
+
+        verify(this.clinicService).saveVisit(visit);
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitRejectsInvalidReasons() throws Exception {
+        String tooLongReason = "a".repeat(256);
+        String[] invalidBodies = {
+            "{}",
+            "{\"reason\":null}",
+            "{\"reason\":\"\"}",
+            "{\"reason\":\"   \"}",
+            "{\"reason\":\"" + tooLongReason + "\"}"
+        };
+
+        for (String body : invalidBodies) {
+            this.mockMvc.perform(put("/api/visits/2/cancel")
+                    .content(body)
+                    .accept(MediaType.APPLICATION_JSON_VALUE)
+                    .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isBadRequest());
+        }
+
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+                .accept(MediaType.APPLICATION_JSON_VALUE)
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isBadRequest());
+        verify(this.clinicService, never()).saveVisit(visits.get(0));
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitNotFound() throws Exception {
+        given(this.clinicService.findVisitById(999)).willReturn(null);
+
+        this.mockMvc.perform(put("/api/visits/999/cancel")
+                .content("{\"reason\":\"Owner unavailable\"}")
+                .accept(MediaType.APPLICATION_JSON_VALUE)
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitConflictPreservesOriginalReason() throws Exception {
+        Visit visit = visits.get(0);
+        visit.cancel("Original reason");
+        given(this.clinicService.findVisitById(2)).willReturn(visit);
+
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+                .content("{\"reason\":\"Replacement reason\"}")
+                .accept(MediaType.APPLICATION_JSON_VALUE)
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isConflict());
+
+        verify(this.clinicService, never()).saveVisit(visit);
+        org.assertj.core.api.Assertions.assertThat(visit.getCancellationReason()).isEqualTo("Original reason");
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testUpdateVisitPreservesCancellationData() throws Exception {
+        Visit visit = visits.get(0);
+        visit.cancel("Owner unavailable");
+        given(this.clinicService.findVisitById(2)).willReturn(visit);
+
+        this.mockMvc.perform(put("/api/visits/2")
+                .content("{\"date\":\"2026-09-15\",\"description\":\"Annual check-up\"}")
+                .accept(MediaType.APPLICATION_JSON_VALUE)
+                .contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isNoContent());
+
+        org.assertj.core.api.Assertions.assertThat(visit.isCancelled()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(visit.getCancellationReason()).isEqualTo("Owner unavailable");
     }
 
     @Test

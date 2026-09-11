@@ -265,13 +265,29 @@ abstract class AbstractClinicServiceTests {
     @Test
     @Transactional
     void shouldUpdateVisit(){
-    	Visit visit = this.clinicService.findVisitById(1);
-    	String oldDesc = visit.getDescription();
+        Visit visit = this.clinicService.findVisitById(1);
+        String oldDesc = visit.getDescription();
         String newDesc = oldDesc + "X";
         visit.setDescription(newDesc);
         this.clinicService.saveVisit(visit);
         visit = this.clinicService.findVisitById(1);
         assertThat(visit.getDescription()).isEqualTo(newDesc);
+    }
+
+    @Test
+    @Transactional
+    void shouldPersistVisitCancellationData() {
+        Visit visit = this.clinicService.findVisitById(1);
+        assertThat(visit.isCancelled()).isFalse();
+        assertThat(visit.getCancellationReason()).isNull();
+
+        visit.cancel("Owner unavailable");
+        this.clinicService.saveVisit(visit);
+        clearCache();
+
+        visit = this.clinicService.findVisitById(1);
+        assertThat(visit.isCancelled()).isTrue();
+        assertThat(visit.getCancellationReason()).isEqualTo("Owner unavailable");
     }
 
     @Test

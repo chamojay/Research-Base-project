@@ -1384,6 +1384,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
+        409:
+          description: Already cancelled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
         500:
           description: Server error.
           content:

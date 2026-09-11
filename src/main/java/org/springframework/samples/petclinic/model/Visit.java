@@ -124,7 +124,7 @@ public class Visit extends BaseEntity {
     private String cancellationReason;
 
     public Boolean getCancelled() {
-        return this.cancelled;
+        return this.cancelled != null ? this.cancelled : false;
     }
 
     public boolean isCancelled() {

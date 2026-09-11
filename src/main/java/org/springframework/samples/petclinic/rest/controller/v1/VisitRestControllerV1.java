@@ -112,10 +112,22 @@ public class VisitRestControllerV1 implements VisitsApi {
     @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
     @Override
     public ResponseEntity<VisitDto> cancelVisit(Integer visitId, VisitCancelDto visitCancelDto) {
+        if (visitCancelDto == null
+                || visitCancelDto.getReason() == null
+                || visitCancelDto.getReason().trim().isEmpty()
+                || visitCancelDto.getReason().length() > 255) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
         Visit currentVisit = this.clinicService.findVisitById(visitId);
         if (currentVisit == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+
+        if (currentVisit.isCancelled()) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
+        }
+
         currentVisit.setCancelled(true);
         currentVisit.setCancellationReason(visitCancelDto.getReason());
         this.clinicService.saveVisit(currentVisit);

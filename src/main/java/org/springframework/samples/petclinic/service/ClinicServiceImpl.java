@@ -99,6 +99,18 @@ public class ClinicServiceImpl implements ClinicService {
     }
 
     @Override
+    @Transactional
+    public Visit cancelVisit(int visitId, String reason) throws DataAccessException {
+        Visit visit = findVisitById(visitId);
+        if (visit != null) {
+            visit.setCancelled(true);
+            visit.setCancellationReason(reason);
+            saveVisit(visit);
+        }
+        return visit;
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Vet findVetById(int id) throws DataAccessException {
         return findEntityById(() -> vetRepository.findById(id));

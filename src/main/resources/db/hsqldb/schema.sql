@@ -57,10 +57,12 @@ ALTER TABLE pets ADD CONSTRAINT fk_pets_types FOREIGN KEY (type_id) REFERENCES t
 CREATE INDEX pets_name ON pets (name);
 
 CREATE TABLE visits (
-  id          INTEGER IDENTITY PRIMARY KEY,
-  pet_id      INTEGER NOT NULL,
-  visit_date  DATE,
-  description VARCHAR(255)
+  id                  INTEGER IDENTITY PRIMARY KEY,
+  pet_id              INTEGER NOT NULL,
+  visit_date          DATE,
+  description         VARCHAR(255),
+  cancelled           BOOLEAN DEFAULT FALSE NOT NULL,
+  cancellation_reason VARCHAR(255)
 );
 ALTER TABLE visits ADD CONSTRAINT fk_visits_pets FOREIGN KEY (pet_id) REFERENCES pets (id);
 CREATE INDEX visits_pet_id ON visits (pet_id);

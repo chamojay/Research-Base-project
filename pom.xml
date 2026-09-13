@@ -248,6 +248,12 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <profiles>
+                        <profile>h2</profile>
+                        <profile>spring-data-jpa</profile>
+                    </profiles>
+                </configuration>
                 <executions>
                     <execution>
                         <!-- Spring Boot Actuator displays build-related information

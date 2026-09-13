@@ -48,6 +48,18 @@ public class Visit extends BaseEntity {
     @JoinColumn(name = "pet_id")
     private Pet pet;
 
+    /**
+     * Holds value of property cancelled.
+     */
+    @Column(name = "cancelled", nullable = false)
+    private boolean cancelled = false;
+
+    /**
+     * Holds value of property cancellationReason.
+     */
+    @Column(name = "cancellation_reason")
+    private String cancellationReason;
+
 
     /**
      * Creates a new instance of Visit for the current date
@@ -109,6 +121,42 @@ public class Visit extends BaseEntity {
      */
     public void setPet(Pet pet) {
         this.pet = pet;
+    }
+
+    /**
+     * Getter for property cancelled.
+     *
+     * @return Value of property cancelled.
+     */
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    /**
+     * Setter for property cancelled.
+     *
+     * @param cancelled New value of property cancelled.
+     */
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
+    }
+
+    /**
+     * Getter for property cancellationReason.
+     *
+     * @return Value of property cancellationReason.
+     */
+    public String getCancellationReason() {
+        return this.cancellationReason;
+    }
+
+    /**
+     * Setter for property cancellationReason.
+     *
+     * @param cancellationReason New value of property cancellationReason.
+     */
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
     }
 
 }

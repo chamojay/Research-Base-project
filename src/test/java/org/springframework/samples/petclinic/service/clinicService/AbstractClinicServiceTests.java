@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * <p> Base class for {@link ClinicService} integration tests. </p> <p> Subclasses should specify Spring context
@@ -285,6 +286,37 @@ abstract class AbstractClinicServiceTests {
 			visit = null;
 		}
         assertThat(visit).isNull();
+    }
+
+    @Test
+    @Transactional
+    void shouldCancelVisit() {
+        Visit visit = this.clinicService.cancelVisit(1, "Owner unavailable");
+        assertThat(visit).isNotNull();
+        assertThat(visit.isCancelled()).isTrue();
+        assertThat(visit.getCancellationReason()).isEqualTo("Owner unavailable");
+
+        Visit reloaded = this.clinicService.findVisitById(1);
+        assertThat(reloaded).isNotNull();
+        assertThat(reloaded.isCancelled()).isTrue();
+        assertThat(reloaded.getCancellationReason()).isEqualTo("Owner unavailable");
+    }
+
+    @Test
+    @Transactional
+    void shouldThrowWhenCancelAlreadyCancelledVisit() {
+        this.clinicService.cancelVisit(1, "Owner unavailable");
+        assertThatThrownBy(() -> this.clinicService.cancelVisit(1, "Another reason"))
+            .isInstanceOf(VisitAlreadyCancelledException.class)
+            .hasMessage("Visit is already cancelled");
+    }
+
+    @Test
+    @Transactional
+    void shouldThrowWhenCancelWithEmptyReason() {
+        assertThatThrownBy(() -> this.clinicService.cancelVisit(1, "  "))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Cancellation reason is required");
     }
 
     @Test

@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.samples.petclinic.mapper.VisitMapper;
 import org.springframework.samples.petclinic.model.Visit;
 import org.springframework.samples.petclinic.rest.api.VisitsApi;
+import org.springframework.samples.petclinic.rest.dto.VisitCancellationFieldsDto;
 import org.springframework.samples.petclinic.rest.dto.VisitDto;
 import org.springframework.samples.petclinic.rest.dto.VisitFieldsDto;
 import org.springframework.samples.petclinic.service.ClinicService;
@@ -90,10 +91,23 @@ public class VisitRestControllerV1 implements VisitsApi {
         if (currentVisit == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+        // Update only standard editable fields; existing cancellation status and reason are preserved
         currentVisit.setDate(visitDto.getDate());
         currentVisit.setDescription(visitDto.getDescription());
         this.clinicService.saveVisit(currentVisit);
         return new ResponseEntity<>(visitMapper.toVisitDto(currentVisit), HttpStatus.NO_CONTENT);
+    }
+
+    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @Override
+    public ResponseEntity<VisitDto> cancelVisit(Integer visitId, VisitCancellationFieldsDto visitCancellationFieldsDto) {
+        Visit currentVisit = this.clinicService.findVisitById(visitId);
+        if (currentVisit == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        // Cancel the visit via service facade (validates reason & state, throws exception if already cancelled)
+        Visit cancelledVisit = this.clinicService.cancelVisit(visitId, visitCancellationFieldsDto.getReason());
+        return new ResponseEntity<>(visitMapper.toVisitDto(cancelledVisit), HttpStatus.OK);
     }
 
     @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")

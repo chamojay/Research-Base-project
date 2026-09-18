@@ -17,6 +17,7 @@
 package org.springframework.samples.petclinic.rest.controller;
 
 import org.springframework.samples.petclinic.rest.controller.v1.VisitRestControllerV1;
+import org.springframework.samples.petclinic.rest.dto.VisitCancellationDto;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -240,6 +241,112 @@ class VisitRestControllerV1Tests {
         this.mockMvc.perform(delete("/api/visits/999")
     		.content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
         	.andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitSuccess() throws Exception {
+        Visit visit = visits.get(0);
+        visit.setCancelled(false);
+        Visit cancelledVisit = new Visit();
+        cancelledVisit.setId(visit.getId());
+        cancelledVisit.setDate(visit.getDate());
+        cancelledVisit.setDescription(visit.getDescription());
+        cancelledVisit.setPet(visit.getPet());
+        cancelledVisit.setCancelled(true);
+        cancelledVisit.setCancellationReason("Owner had an emergency");
+
+        given(this.clinicService.findVisitById(2)).willReturn(visit);
+        given(this.clinicService.cancelVisit(2, "Owner had an emergency")).willReturn(cancelledVisit);
+
+        VisitCancellationDto cancellationDto = new VisitCancellationDto();
+        cancellationDto.setCancellationReason("Owner had an emergency");
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(cancellationDto);
+
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+            .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.id").value(2))
+            .andExpect(jsonPath("$.cancelled").value(true))
+            .andExpect(jsonPath("$.cancellationReason").value("Owner had an emergency"));
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitNotFound() throws Exception {
+        given(this.clinicService.findVisitById(999)).willReturn(null);
+
+        VisitCancellationDto cancellationDto = new VisitCancellationDto();
+        cancellationDto.setCancellationReason("Owner had an emergency");
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(cancellationDto);
+
+        this.mockMvc.perform(put("/api/visits/999/cancel")
+            .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isNotFound())
+            .andExpect(header().string("errors", "Visit not found"));
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitBadRequest() throws Exception {
+        VisitCancellationDto cancellationDto = new VisitCancellationDto();
+        cancellationDto.setCancellationReason("   ");
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(cancellationDto);
+
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+            .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isBadRequest())
+            .andExpect(header().string("errors", "Cancellation reason must not be blank"));
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitReasonTooLong() throws Exception {
+        VisitCancellationDto cancellationDto = new VisitCancellationDto();
+        cancellationDto.setCancellationReason("a".repeat(256));
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(cancellationDto);
+
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+            .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitAlreadyCancelled() throws Exception {
+        Visit alreadyCancelledVisit = visits.get(0);
+        alreadyCancelledVisit.setCancelled(true);
+        alreadyCancelledVisit.setCancellationReason("Already cancelled");
+
+        given(this.clinicService.findVisitById(2)).willReturn(alreadyCancelledVisit);
+
+        VisitCancellationDto cancellationDto = new VisitCancellationDto();
+        cancellationDto.setCancellationReason("New reason");
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(cancellationDto);
+
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+            .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isBadRequest())
+            .andExpect(header().string("errors", "Visit is already cancelled"));
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitInvalidId() throws Exception {
+        VisitCancellationDto cancellationDto = new VisitCancellationDto();
+        cancellationDto.setCancellationReason("Emergency");
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(cancellationDto);
+
+        this.mockMvc.perform(put("/api/visits/-1/cancel")
+            .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isBadRequest());
     }
 
 }

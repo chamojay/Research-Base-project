@@ -147,4 +147,31 @@ public class ExceptionControllerAdvice {
         return ResponseEntity.status(status).body(detail);
     }
 
+    /**
+     * Handles exception thrown by Bean Validation on method path/query parameters
+     *
+     * @param e The {@link jakarta.validation.ConstraintViolationException} to be handled
+     * @param request {@link HttpServletRequest} object referring to the current request.
+     * @return A {@link ResponseEntity} containing the error information and a 400 Bad Request status.
+     */
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    @ResponseBody
+    public ResponseEntity<ProblemDetail> handleConstraintViolationException(jakarta.validation.ConstraintViolationException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        ProblemDetail detail = this.detailBuild(e, status, request.getRequestURL(), ERROR_INVALID_REQUEST);
+        List<ValidationMessageDto> schemaValidationErrors = e.getConstraintViolations().stream()
+            .map(violation -> {
+                String field = violation.getPropertyPath().toString();
+                String rejectedValue = Objects.toString(violation.getInvalidValue(), "null");
+                String message = violation.getMessage();
+                return new ValidationMessageDto(field + ": " + message)
+                    .putAdditionalProperty("field", field)
+                    .putAdditionalProperty("rejectedValue", rejectedValue)
+                    .putAdditionalProperty("defaultMessage", message);
+            })
+            .toList();
+        detail.setProperty("schemaValidationErrors", schemaValidationErrors);
+        return ResponseEntity.status(status).body(detail);
+    }
+
 }

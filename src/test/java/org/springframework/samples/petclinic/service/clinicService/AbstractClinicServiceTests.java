@@ -288,6 +288,23 @@ abstract class AbstractClinicServiceTests {
     }
 
     @Test
+    @Transactional
+    void shouldCancelVisit() {
+        Visit visit = this.clinicService.findVisitById(1);
+        assertThat(visit.isCancelled()).isFalse();
+
+        Visit cancelledVisit = this.clinicService.cancelVisit(1, "Owner had an emergency");
+        assertThat(cancelledVisit).isNotNull();
+        assertThat(cancelledVisit.isCancelled()).isTrue();
+        assertThat(cancelledVisit.getCancellationReason()).isEqualTo("Owner had an emergency");
+
+        Visit reloadedVisit = this.clinicService.findVisitById(1);
+        assertThat(reloadedVisit).isNotNull();
+        assertThat(reloadedVisit.isCancelled()).isTrue();
+        assertThat(reloadedVisit.getCancellationReason()).isEqualTo("Owner had an emergency");
+    }
+
+    @Test
     void shouldFindVetDyId(){
     	Vet vet = this.clinicService.findVetById(1);
     	assertThat(vet.getFirstName()).isEqualTo("James");

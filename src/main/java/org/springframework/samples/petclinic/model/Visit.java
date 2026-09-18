@@ -102,13 +102,54 @@ public class Visit extends BaseEntity {
         return this.pet;
     }
 
-    /**
-     * Setter for property pet.
-     *
-     * @param pet New value of property pet.
-     */
     public void setPet(Pet pet) {
         this.pet = pet;
+    }
+
+    @Column(name = "cancelled", nullable = false)
+    private boolean cancelled = false;
+
+    @Column(name = "cancellation_reason")
+    private String cancellationReason;
+
+    /**
+     * Getter for property cancelled.
+     *
+     * @return Value of property cancelled.
+     */
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    public Boolean getCancelled() {
+        return this.cancelled;
+    }
+
+    /**
+     * Setter for property cancelled.
+     *
+     * @param cancelled New value of property cancelled.
+     */
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
+    }
+
+    /**
+     * Getter for property cancellationReason.
+     *
+     * @return Value of property cancellationReason.
+     */
+    public String getCancellationReason() {
+        return this.cancellationReason;
+    }
+
+    /**
+     * Setter for property cancellationReason.
+     *
+     * @param cancellationReason New value of property cancellationReason.
+     */
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
     }
 
 }

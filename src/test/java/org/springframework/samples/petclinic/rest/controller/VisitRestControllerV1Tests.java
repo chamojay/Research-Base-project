@@ -242,4 +242,90 @@ class VisitRestControllerV1Tests {
         	.andExpect(status().isNotFound());
     }
 
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitSuccess() throws Exception {
+        Visit visit = visits.get(0);
+        given(this.clinicService.findVisitById(2)).willReturn(visit);
+        String cancelJson = "{\"reason\":\"Owner unavailable\"}";
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+                .content(cancelJson).contentType(MediaType.APPLICATION_JSON_VALUE).accept(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.id").value(2))
+            .andExpect(jsonPath("$.cancelled").value(true))
+            .andExpect(jsonPath("$.cancellationReason").value("Owner unavailable"));
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitInvalidReason_Whitespace() throws Exception {
+        String cancelJson = "{\"reason\":\"   \"}";
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+                .content(cancelJson).contentType(MediaType.APPLICATION_JSON_VALUE).accept(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitInvalidReason_Empty() throws Exception {
+        String cancelJson = "{\"reason\":\"\"}";
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+                .content(cancelJson).contentType(MediaType.APPLICATION_JSON_VALUE).accept(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitInvalidReason_TooLong() throws Exception {
+        String longReason = "a".repeat(256);
+        String cancelJson = "{\"reason\":\"" + longReason + "\"}";
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+                .content(cancelJson).contentType(MediaType.APPLICATION_JSON_VALUE).accept(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitNotFound() throws Exception {
+        given(this.clinicService.findVisitById(999)).willReturn(null);
+        String cancelJson = "{\"reason\":\"Owner unavailable\"}";
+        this.mockMvc.perform(put("/api/visits/999/cancel")
+                .content(cancelJson).contentType(MediaType.APPLICATION_JSON_VALUE).accept(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitAlreadyCancelled() throws Exception {
+        Visit visit = visits.get(0);
+        visit.setCancelled(true);
+        visit.setCancellationReason("Initial cancellation");
+        given(this.clinicService.findVisitById(2)).willReturn(visit);
+
+        String cancelJson = "{\"reason\":\"Second attempt\"}";
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+                .content(cancelJson).contentType(MediaType.APPLICATION_JSON_VALUE).accept(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isConflict());
+
+        org.junit.jupiter.api.Assertions.assertEquals("Initial cancellation", visit.getCancellationReason());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testUpdateVisitPreservesCancellation() throws Exception {
+        Visit visit = visits.get(0);
+        visit.setCancelled(true);
+        visit.setCancellationReason("Original reason");
+        given(this.clinicService.findVisitById(2)).willReturn(visit);
+
+        String updateJson = "{\"date\":\"2026-09-20\",\"description\":\"Updated check-up\"}";
+        this.mockMvc.perform(put("/api/visits/2")
+                .content(updateJson).contentType(MediaType.APPLICATION_JSON_VALUE).accept(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isNoContent());
+
+        org.junit.jupiter.api.Assertions.assertTrue(visit.getCancelled());
+        org.junit.jupiter.api.Assertions.assertEquals("Original reason", visit.getCancellationReason());
+    }
+
 }

@@ -111,4 +111,29 @@ public class Visit extends BaseEntity {
         this.pet = pet;
     }
 
+    @Column(name = "cancelled")
+    private Boolean cancelled = false;
+
+    @Column(name = "cancellation_reason")
+    private String cancellationReason;
+
+    public Boolean getCancelled() {
+        return this.cancelled;
+    }
+
+    public String getCancellationReason() {
+        return this.cancellationReason;
+    }
+
+    public void cancel(String reason) {
+        if (Boolean.TRUE.equals(this.cancelled)) {
+            throw new IllegalStateException("Visit is already cancelled");
+        }
+        if (reason == null || reason.trim().isEmpty() || reason.length() > 255) {
+            throw new IllegalArgumentException("Invalid cancellation reason");
+        }
+        this.cancelled = true;
+        this.cancellationReason = reason;
+    }
+
 }

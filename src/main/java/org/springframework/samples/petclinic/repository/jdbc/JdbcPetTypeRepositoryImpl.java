@@ -127,7 +127,7 @@ public class JdbcPetTypeRepositoryImpl implements PetTypeRepository {
 			petParams.put("id", pet.getId());
 			List<Visit> visits;
 			visits = this.namedParameterJdbcTemplate.query(
-		            "SELECT id, pet_id, visit_date, description FROM visits WHERE pet_id = :id",
+		            "SELECT id, pet_id, visit_date, description, cancelled, cancellation_reason FROM visits WHERE pet_id = :id",
 		            petParams,
 		            BeanPropertyRowMapper.newInstance(Visit.class));
 	        // cascade delete visits

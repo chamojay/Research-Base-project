@@ -94,6 +94,18 @@ public class ClinicServiceImpl implements ClinicService {
 
     @Override
     @Transactional
+    public boolean cancelVisit(Visit visit, String cancellationReason) throws DataAccessException {
+        if (visit.isCancelled()) {
+            return false;
+        }
+        visit.setCancelled(true);
+        visit.setCancellationReason(cancellationReason);
+        visitRepository.save(visit);
+        return true;
+    }
+
+    @Override
+    @Transactional
     public void deleteVisit(Visit visit) throws DataAccessException {
         visitRepository.delete(visit);
     }

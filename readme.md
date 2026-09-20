@@ -86,6 +86,7 @@ API documentation (OAS 3.1) is accessible at: [http://localhost:9966/petclinic/v
 | **GET** | `/api/visits/{visitId}` | Get a visit by ID |
 | **POST** | `/api/visits` | Add a new visit |
 | **PUT** | `/api/visits/{visitId}` | Update a visit |
+| **PUT** | `/api/visits/{visitId}/cancel` | Cancel a visit with a reason |
 | **DELETE** | `/api/visits/{visitId}` | Delete a visit |
 | **Users** |  |  |
 | **POST** | `/api/users` | Create a new user |

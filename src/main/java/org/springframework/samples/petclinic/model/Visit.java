@@ -48,12 +48,25 @@ public class Visit extends BaseEntity {
     @JoinColumn(name = "pet_id")
     private Pet pet;
 
+    /**
+     * Indicates whether the visit has been cancelled.
+     */
+    @Column(name = "cancelled", nullable = false)
+    private Boolean cancelled = false;
+
+    /**
+     * Reason recorded when the visit was cancelled.
+     */
+    @Column(name = "cancellation_reason")
+    private String cancellationReason;
+
 
     /**
      * Creates a new instance of Visit for the current date
      */
     public Visit() {
         this.date = LocalDate.now();
+        this.cancelled = false;
     }
 
 
@@ -111,4 +124,50 @@ public class Visit extends BaseEntity {
         this.pet = pet;
     }
 
+    /**
+     * Check if visit is cancelled.
+     *
+     * @return true if cancelled, false otherwise.
+     */
+    public Boolean getCancelled() {
+        return this.cancelled != null && this.cancelled;
+    }
+
+    public Boolean isCancelled() {
+        return getCancelled();
+    }
+
+    public void setCancelled(Boolean cancelled) {
+        this.cancelled = cancelled != null ? cancelled : false;
+    }
+
+    public String getCancellationReason() {
+        return this.cancellationReason;
+    }
+
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
+    }
+
+    /**
+     * Cancels the visit with the specified reason.
+     * Validates that the visit is not already cancelled and the reason is non-empty.
+     *
+     * @param reason The cancellation explanation
+     * @throws org.springframework.samples.petclinic.service.InvalidCancellationException if the visit is already cancelled or reason is blank
+     */
+    public void cancel(String reason) {
+        // Reject repeated cancellation attempts to maintain consistent state
+        if (Boolean.TRUE.equals(this.cancelled)) {
+            throw new org.springframework.samples.petclinic.service.InvalidCancellationException("Visit is already cancelled");
+        }
+        // Ensure mandatory cancellation reason is provided
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new org.springframework.samples.petclinic.service.InvalidCancellationException("Cancellation reason must not be empty");
+        }
+        this.cancelled = true;
+        this.cancellationReason = reason.trim();
+    }
+
 }
+

@@ -108,6 +108,25 @@ public class ExceptionControllerAdvice {
     }
 
     /**
+     * Handles business rule validation exceptions such as invalid or repeated cancellations.
+     *
+     * @param e The {@link org.springframework.samples.petclinic.service.InvalidCancellationException} to be handled
+     * @param request {@link HttpServletRequest} object referring to the current request.
+     * @return A {@link ResponseEntity} containing the error information and a 400 Bad Request status
+     */
+    @ExceptionHandler(org.springframework.samples.petclinic.service.InvalidCancellationException.class)
+    @ResponseBody
+    public ResponseEntity<ProblemDetail> handleInvalidCancellationException(org.springframework.samples.petclinic.service.InvalidCancellationException e, HttpServletRequest request) {
+        logger.warn("Invalid cancellation exception at {} {}: {}",
+            request.getMethod(),
+            request.getRequestURI(),
+            e.getMessage());
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        ProblemDetail detail = this.detailBuild(e, status, request.getRequestURL(), e.getMessage());
+        return ResponseEntity.status(status).body(detail);
+    }
+
+    /**
      * Handles exception thrown by Bean Validation on controller methods parameters
      *
      * @param e The {@link MethodArgumentNotValidException} to be handled

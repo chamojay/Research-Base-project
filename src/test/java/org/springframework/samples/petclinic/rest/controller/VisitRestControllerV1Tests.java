@@ -18,6 +18,8 @@ package org.springframework.samples.petclinic.rest.controller;
 
 import org.springframework.samples.petclinic.rest.controller.v1.VisitRestControllerV1;
 import tools.jackson.databind.ObjectMapper;
+import org.springframework.samples.petclinic.rest.dto.VisitCancelDto;
+import org.springframework.samples.petclinic.rest.dto.VisitFieldsDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -242,4 +244,135 @@ class VisitRestControllerV1Tests {
         	.andExpect(status().isNotFound());
     }
 
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitSuccess() throws Exception {
+        Visit visit = visits.get(0);
+        visit.setCancelled(false);
+        visit.setCancellationReason(null);
+        given(this.clinicService.findVisitById(2)).willReturn(visit);
+
+        VisitCancelDto cancelDto = new VisitCancelDto();
+        cancelDto.setReason("Owner unavailable");
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(cancelDto);
+
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+            .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.id").value(2))
+            .andExpect(jsonPath("$.cancelled").value(true))
+            .andExpect(jsonPath("$.cancellationReason").value("Owner unavailable"));
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitInvalidReasonEmpty() throws Exception {
+        Visit visit = visits.get(0);
+        given(this.clinicService.findVisitById(2)).willReturn(visit);
+
+        VisitCancelDto cancelDto = new VisitCancelDto();
+        cancelDto.setReason("");
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(cancelDto);
+
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+            .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitInvalidReasonWhitespace() throws Exception {
+        Visit visit = visits.get(0);
+        given(this.clinicService.findVisitById(2)).willReturn(visit);
+
+        VisitCancelDto cancelDto = new VisitCancelDto();
+        cancelDto.setReason("   ");
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(cancelDto);
+
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+            .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitInvalidReasonTooLong() throws Exception {
+        Visit visit = visits.get(0);
+        given(this.clinicService.findVisitById(2)).willReturn(visit);
+
+        VisitCancelDto cancelDto = new VisitCancelDto();
+        cancelDto.setReason("a".repeat(256));
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(cancelDto);
+
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+            .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitNotFound() throws Exception {
+        given(this.clinicService.findVisitById(999)).willReturn(null);
+
+        VisitCancelDto cancelDto = new VisitCancelDto();
+        cancelDto.setReason("Owner unavailable");
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(cancelDto);
+
+        this.mockMvc.perform(put("/api/visits/999/cancel")
+            .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testCancelVisitAlreadyCancelled() throws Exception {
+        Visit visit = visits.get(0);
+        visit.setCancelled(true);
+        visit.setCancellationReason("Initial cancellation");
+        given(this.clinicService.findVisitById(2)).willReturn(visit);
+
+        VisitCancelDto cancelDto = new VisitCancelDto();
+        cancelDto.setReason("Second cancellation attempt");
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(cancelDto);
+
+        this.mockMvc.perform(put("/api/visits/2/cancel")
+            .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isConflict());
+
+        // Verify original cancellation reason is preserved
+        org.junit.jupiter.api.Assertions.assertEquals("Initial cancellation", visit.getCancellationReason());
+    }
+
+    @Test
+    @WithMockUser(roles="OWNER_ADMIN")
+    void testUpdateVisitPreservesCancellation() throws Exception {
+        Visit visit = visits.get(0);
+        visit.setCancelled(true);
+        visit.setCancellationReason("Owner unavailable");
+        given(this.clinicService.findVisitById(2)).willReturn(visit);
+
+        VisitFieldsDto updateDto = new VisitFieldsDto();
+        updateDto.setDate(LocalDate.now().plusDays(1));
+        updateDto.setDescription("Updated description");
+
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(updateDto);
+
+        this.mockMvc.perform(put("/api/visits/2")
+            .content(json).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(status().isNoContent());
+
+        org.junit.jupiter.api.Assertions.assertTrue(visit.isCancelled());
+        org.junit.jupiter.api.Assertions.assertEquals("Owner unavailable", visit.getCancellationReason());
+        org.junit.jupiter.api.Assertions.assertEquals("Updated description", visit.getDescription());
+    }
+
 }
+

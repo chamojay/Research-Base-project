@@ -48,12 +48,25 @@ public class Visit extends BaseEntity {
     @JoinColumn(name = "pet_id")
     private Pet pet;
 
+    /**
+     * Holds value of property cancelled.
+     */
+    @Column(name = "cancelled", nullable = false)
+    private Boolean cancelled = false;
+
+    /**
+     * Holds value of property cancellationReason.
+     */
+    @Column(name = "cancellation_reason")
+    private String cancellationReason;
+
 
     /**
      * Creates a new instance of Visit for the current date
      */
     public Visit() {
         this.date = LocalDate.now();
+        this.cancelled = false;
     }
 
 
@@ -109,6 +122,51 @@ public class Visit extends BaseEntity {
      */
     public void setPet(Pet pet) {
         this.pet = pet;
+    }
+
+    /**
+     * Getter for property cancelled.
+     *
+     * @return Value of property cancelled.
+     */
+    public Boolean getCancelled() {
+        return this.cancelled != null ? this.cancelled : false;
+    }
+
+    /**
+     * Setter for property cancelled.
+     *
+     * @param cancelled New value of property cancelled.
+     */
+    public void setCancelled(Boolean cancelled) {
+        this.cancelled = (cancelled != null) ? cancelled : false;
+    }
+
+    /**
+     * Helper method to check if visit is cancelled.
+     *
+     * @return true if cancelled, false otherwise.
+     */
+    public boolean isCancelled() {
+        return Boolean.TRUE.equals(this.cancelled);
+    }
+
+    /**
+     * Getter for property cancellationReason.
+     *
+     * @return Value of property cancellationReason.
+     */
+    public String getCancellationReason() {
+        return this.cancellationReason;
+    }
+
+    /**
+     * Setter for property cancellationReason.
+     *
+     * @param cancellationReason New value of property cancellationReason.
+     */
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
     }
 
 }

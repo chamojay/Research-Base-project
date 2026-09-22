@@ -47,10 +47,12 @@ CREATE TABLE IF NOT EXISTS pets (
 ) engine=InnoDB;
 
 CREATE TABLE IF NOT EXISTS visits (
-  id INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  pet_id INT(4) UNSIGNED NOT NULL,
-  visit_date DATE,
-  description VARCHAR(255),
+  id                  INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  pet_id              INT(4) UNSIGNED NOT NULL,
+  visit_date          DATE,
+  description         VARCHAR(255),
+  cancelled           BOOLEAN NOT NULL DEFAULT FALSE,
+  cancellation_reason VARCHAR(255),
   FOREIGN KEY (pet_id) REFERENCES pets(id)
 ) engine=InnoDB;
 

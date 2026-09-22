@@ -48,14 +48,12 @@ public class Visit extends BaseEntity {
     @JoinColumn(name = "pet_id")
     private Pet pet;
 
-
     /**
      * Creates a new instance of Visit for the current date
      */
     public Visit() {
         this.date = LocalDate.now();
     }
-
 
     /**
      * Getter for property date.
@@ -109,6 +107,28 @@ public class Visit extends BaseEntity {
      */
     public void setPet(Pet pet) {
         this.pet = pet;
+    }
+
+    @Column(name = "cancelled", nullable = false)
+    private boolean cancelled = false;
+
+    @Column(name = "cancellation_reason")
+    private String cancellationReason;
+
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
+    }
+
+    public String getCancellationReason() {
+        return this.cancellationReason;
+    }
+
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
     }
 
 }

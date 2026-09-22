@@ -52,10 +52,12 @@ CREATE TABLE IF NOT EXISTS pets (
 CREATE INDEX idx_pets_name ON pets(name);
 
 CREATE TABLE IF NOT EXISTS visits (
-  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  pet_id INTEGER NOT NULL,
-  visit_date DATE NOT NULL,
-  description VARCHAR(255) NOT NULL,
+  id                  INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  pet_id              INTEGER NOT NULL,
+  visit_date          DATE NOT NULL,
+  description         VARCHAR(255) NOT NULL,
+  cancelled           BOOLEAN NOT NULL DEFAULT FALSE,
+  cancellation_reason VARCHAR(255),
   FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
 );
 

@@ -99,6 +99,25 @@ public class ClinicServiceImpl implements ClinicService {
     }
 
     @Override
+    @Transactional
+    public Visit cancelVisit(int visitId, String reason) throws DataAccessException {
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new IllegalArgumentException("Cancellation reason is required");
+        }
+        Visit visit = findVisitById(visitId);
+        if (visit == null) {
+            return null;
+        }
+        if (visit.isCancelled()) {
+            throw new VisitAlreadyCancelledException("Visit is already cancelled");
+        }
+        visit.setCancelled(true);
+        visit.setCancellationReason(reason.trim());
+        visitRepository.save(visit);
+        return visit;
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Vet findVetById(int id) throws DataAccessException {
         return findEntityById(() -> vetRepository.findById(id));

@@ -1341,6 +1341,66 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
+  /visits/{visitId}/cancel:
+    put:
+      tags:
+        - visits
+      operationId: cancelVisit
+      summary: Cancel a visit by ID
+      description: Cancels an existing visit with a specified reason.
+      parameters:
+        - name: visitId
+          in: path
+          description: The ID of the visit.
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            example: 1
+      requestBody:
+        description: The cancellation request containing the reason.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisitCancelRequest'
+        required: true
+      responses:
+        200:
+          description: Valid cancellation Return the updated Visit resource with cancellation data.
+          headers:
+            ETag:
+              description: An ID for this version of the response.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+        400:
+          description: Invalid reason Reason is missing, null, empty, whitespace-only, or longer than 255 characters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        404:
+          description: Visit not found No visit exists for the supplied visitId.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        409:
+          description: Already cancelled Reject the second cancellation and preserve the original cancellation data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
   /specialties:
     get:
       tags:
@@ -2302,9 +2362,32 @@ components:
               format: int32
               minimum: 0
               example: 1
+            cancelled:
+              title: Cancelled
+              description: Indicates whether the visit is cancelled.
+              type: boolean
+              example: false
+            cancellationReason:
+              title: Cancellation Reason
+              description: The reason why the visit was cancelled.
+              type: string
+              maxLength: 255
+              example: 'Owner unavailable'
           required:
             - id
             - petId
+    VisitCancelRequest:
+      title: Visit cancel request
+      description: Request body to cancel a visit.
+      type: object
+      properties:
+        reason:
+          title: Reason
+          description: The reason for cancelling the visit.
+          type: string
+          example: 'Owner unavailable'
+      required:
+        - reason
     PetTypeFields:
       title: PetType fields
       description: Editable fields of a pet type.

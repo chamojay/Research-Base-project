@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.samples.petclinic.mapper.VisitMapper;
 import org.springframework.samples.petclinic.model.Visit;
 import org.springframework.samples.petclinic.rest.api.VisitsApi;
+import org.springframework.samples.petclinic.rest.dto.VisitCancellationDto;
 import org.springframework.samples.petclinic.rest.dto.VisitDto;
 import org.springframework.samples.petclinic.rest.dto.VisitFieldsDto;
 import org.springframework.samples.petclinic.service.ClinicService;
@@ -106,6 +107,37 @@ public class VisitRestControllerV1 implements VisitsApi {
         }
         this.clinicService.deleteVisit(visit);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @Override
+    public ResponseEntity<VisitDto> cancelVisit(Integer visitId, VisitCancellationDto visitCancellationDto) {
+        HttpHeaders headers = new HttpHeaders();
+        if (visitId == null || visitId <= 0) {
+            headers.set("errors", "Invalid visit ID");
+            return new ResponseEntity<>(headers, HttpStatus.BAD_REQUEST);
+        }
+        if (visitCancellationDto == null || visitCancellationDto.getCancellationReason() == null
+            || visitCancellationDto.getCancellationReason().trim().isEmpty()) {
+            headers.set("errors", "Cancellation reason must not be blank");
+            return new ResponseEntity<>(headers, HttpStatus.BAD_REQUEST);
+        }
+        String trimmedReason = visitCancellationDto.getCancellationReason().trim();
+        if (trimmedReason.length() > 255) {
+            headers.set("errors", "Cancellation reason must not exceed 255 characters");
+            return new ResponseEntity<>(headers, HttpStatus.BAD_REQUEST);
+        }
+        Visit currentVisit = this.clinicService.findVisitById(visitId);
+        if (currentVisit == null) {
+            headers.set("errors", "Visit not found");
+            return new ResponseEntity<>(headers, HttpStatus.NOT_FOUND);
+        }
+        if (currentVisit.isCancelled()) {
+            headers.set("errors", "Visit is already cancelled");
+            return new ResponseEntity<>(headers, HttpStatus.BAD_REQUEST);
+        }
+        Visit visit = this.clinicService.cancelVisit(visitId, trimmedReason);
+        return new ResponseEntity<>(visitMapper.toVisitDto(visit), HttpStatus.OK);
     }
 
 }

@@ -1341,6 +1341,60 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
+  /visits/{visitId}/cancel:
+    put:
+      tags:
+        - visits
+      operationId: cancelVisit
+      summary: Cancel a visit by ID
+      description: Cancels the visit and records the cancellation reason without deleting it.
+      parameters:
+        - name: visitId
+          in: path
+          description: The ID of the visit.
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            example: 1
+      requestBody:
+        description: The visit cancellation details.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisitCancellation'
+        required: true
+      responses:
+        200:
+          description: Visit cancelled and returned.
+          headers:
+            ETag:
+              description: An ID for this version of the response.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+        400:
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        404:
+          description: Visit not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
   /specialties:
     get:
       tags:
@@ -2278,6 +2332,17 @@ components:
           minLength: 1
           maxLength: 255
           example: 'rabies shot'
+        cancelled:
+          title: Cancelled
+          description: Indicates if the visit is cancelled.
+          type: boolean
+          example: false
+        cancellationReason:
+          title: Cancellation reason
+          description: The reason why the visit was cancelled.
+          type: string
+          maxLength: 255
+          example: 'Owner rescheduled'
       required:
         - description
     Visit:
@@ -2305,6 +2370,20 @@ components:
           required:
             - id
             - petId
+    VisitCancellation:
+      title: Visit cancellation
+      description: Cancellation details for a vet visit.
+      type: object
+      properties:
+        cancellationReason:
+          title: Cancellation reason
+          description: Reason for cancelling the visit.
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: 'Owner had an emergency'
+      required:
+        - cancellationReason
     PetTypeFields:
       title: PetType fields
       description: Editable fields of a pet type.

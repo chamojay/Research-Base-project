@@ -1341,6 +1341,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
+  /visits/{visitId}/cancel:
+    put:
+      tags:
+        - visits
+      operationId: cancelVisit
+      summary: Cancel a visit
+      description: Cancels the visit and records the reason.
+      parameters:
+        - name: visitId
+          in: path
+          description: The ID of the visit.
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            example: 1
+      requestBody:
+        description: The cancellation reason
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancellationRequest'
+        required: true
+      responses:
+        200:
+          description: Visit cancelled and returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+        400:
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        404:
+          description: Visit not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        409:
+          description: Already cancelled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        500:
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
   /specialties:
     get:
       tags:
@@ -2302,6 +2357,16 @@ components:
               format: int32
               minimum: 0
               example: 1
+            cancelled:
+              title: Cancelled
+              description: Indicates if the visit is cancelled.
+              type: boolean
+              example: false
+            cancellationReason:
+              title: Cancellation Reason
+              description: The reason for cancelling the visit.
+              type: string
+              example: 'Owner unavailable'
           required:
             - id
             - petId
@@ -2381,3 +2446,17 @@ components:
           example: admin
       required:
         - name
+    CancellationRequest:
+      title: Cancellation Request
+      description: Request to cancel a visit.
+      type: object
+      properties:
+        reason:
+          title: Reason
+          description: Reason for cancellation.
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: 'Owner unavailable'
+      required:
+        - reason

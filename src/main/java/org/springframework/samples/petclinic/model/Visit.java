@@ -111,4 +111,36 @@ public class Visit extends BaseEntity {
         this.pet = pet;
     }
 
+    /**
+     * Holds value of property cancelled.
+     */
+    @Column(name = "cancelled")
+    private Boolean cancelled = false;
+
+    /**
+     * Holds value of property cancellationReason.
+     */
+    @Column(name = "cancellation_reason")
+    private String cancellationReason;
+
+    public Boolean getCancelled() {
+        return this.cancelled != null ? this.cancelled : false;
+    }
+
+    public boolean isCancelled() {
+        return Boolean.TRUE.equals(this.cancelled);
+    }
+
+    public void setCancelled(Boolean cancelled) {
+        this.cancelled = cancelled;
+    }
+
+    public String getCancellationReason() {
+        return this.cancellationReason;
+    }
+
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
+    }
+
 }

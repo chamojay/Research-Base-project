@@ -288,6 +288,36 @@ abstract class AbstractClinicServiceTests {
     }
 
     @Test
+    @Transactional
+    void shouldCancelVisit() {
+        Visit cancelled = this.clinicService.cancelVisit(1, "Owner requested reschedule");
+        assertThat(cancelled).isNotNull();
+        assertThat(cancelled.getCancelled()).isTrue();
+        assertThat(cancelled.getCancellationReason()).isEqualTo("Owner requested reschedule");
+
+        Visit reloaded = this.clinicService.findVisitById(1);
+        assertThat(reloaded.getCancelled()).isTrue();
+        assertThat(reloaded.getCancellationReason()).isEqualTo("Owner requested reschedule");
+    }
+
+    @Test
+    @Transactional
+    void shouldFailCancellingAlreadyCancelledVisit() {
+        this.clinicService.cancelVisit(1, "First cancellation");
+        org.junit.jupiter.api.Assertions.assertThrows(org.springframework.samples.petclinic.service.InvalidCancellationException.class, () -> {
+            this.clinicService.cancelVisit(1, "Second cancellation attempt");
+        });
+    }
+
+    @Test
+    @Transactional
+    void shouldFailCancellingWithEmptyReason() {
+        org.junit.jupiter.api.Assertions.assertThrows(org.springframework.samples.petclinic.service.InvalidCancellationException.class, () -> {
+            this.clinicService.cancelVisit(1, "   ");
+        });
+    }
+
+    @Test
     void shouldFindVetDyId(){
     	Vet vet = this.clinicService.findVetById(1);
     	assertThat(vet.getFirstName()).isEqualTo("James");
